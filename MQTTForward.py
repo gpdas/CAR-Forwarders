@@ -4,7 +4,7 @@
 # Date:         19/05/2022                                          #
 # Description:  MQTT forwarder to Websocket as part of Call-A-Robot #
 #               and Smart Trolley Device project. This module is    #
-#               for use by MtoW.py and is run in a thread           #
+#               for use by MtoW.py                                  #
 # Module:       MQTTForward.py                                      #
 #####################################################################
 
