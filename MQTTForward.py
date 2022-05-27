@@ -74,7 +74,6 @@ class MQTTforwarder:
     # WSend #
     #########
     def WSend(self, msg):
-        msg['Forwared-By'] = "MtoW.py"
         ws = create_connection(self.wsHost)
         ws.send(msg)
         print("Sending...", msg)
@@ -93,6 +92,7 @@ class MQTTforwarder:
 
             # The extra field isn't recognised by WS server
             if tStr == "trolley/method" or tStr == "trolley/register":
+                mDict['Forwared-By'] = "MtoW.py"
                 self.WSend(json.dumps(mDict))
             
             # reformat message (MQTT has a lot more info in and WS server only
@@ -116,6 +116,7 @@ class MQTTforwarder:
                 if gps['latitude'] == "" or gps['longitude'] == "":
                     gps['latitude'] = "-1"
                     gps['longitude'] = "-1"
+                gps['Forwared-By'] = "MtoW.py"
                 self.WSend(json.dumps(gps))
             
             # Battery info - WS ignores this at present
@@ -127,6 +128,7 @@ class MQTTforwarder:
                 bat['information'] = states
                 bat['_id'] = mDict['CLIENT_ID']
                 bat['method'] = "battery"
+                bat['Forwared-By'] = "MtoW.py"
                 self.WSend(json.dumps(bat))
         
         # Garbage may appear within MQTT message (like byte coded 
