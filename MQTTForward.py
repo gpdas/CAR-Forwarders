@@ -102,12 +102,22 @@ class MQTTforwarder:
                 gps['latitude'] = mDict['LATITUDE']
                 gps['method'] = "location_update"
                 gps['longitude'] = mDict['LONGITUDE']
+
+                # NOTE not sure about _id
                 gps['_id'] = mDict['CLIENT_ID']
+
+                # TODO This field needs changing with the device itself
+                # it will be STD-v2-*UNIQUE MAC* (Smart Trolley Device Version 2)
                 gps['user'] = "ESP32_CAR_USER_Andy"
+
                 gps['accuracy'] = mDict['PDOP']
+
+                # NOTE The row isn't sent by STDv2 - it also won't be known by the device?
                 gps['row'] = ""
                 gps['rcv_time'] = mDict['UTC_DATE_TIME']
+
                 # Call-A-Robot prefers -1 for no GPS
+                # NOTE will be set within STD in near future
                 if gps['latitude'] == "" or gps['longitude'] == "":
                     gps['latitude'] = "-1"
                     gps['longitude'] = "-1"
