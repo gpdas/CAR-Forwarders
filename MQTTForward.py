@@ -74,6 +74,7 @@ class MQTTforwarder:
     # WSend #
     #########
     def WSend(self, msg):
+        msg['Forwared-By'] = "MtoW.py"
         ws = create_connection(self.wsHost)
         ws.send(msg)
         print("Sending...", msg)
@@ -83,7 +84,7 @@ class MQTTforwarder:
     # send #
     ########
     def send(self, msg, topic):
-        
+
         # MQTT messages from all topics arrive here
         try:
             mDict = json.loads(msg.decode("utf-8") )
@@ -92,7 +93,6 @@ class MQTTforwarder:
 
             # The extra field isn't recognised by WS server
             if tStr == "trolley/method" or tStr == "trolley/registration":
-                mDict['Forwared-By'] = "MtoW.py"
                 self.WSend(json.dumps(mDict))
             
             # reformat message (MQTT has a lot more info in and WS server only
@@ -107,7 +107,6 @@ class MQTTforwarder:
                 gps['accuracy'] = mDict['PDOP']
                 gps['row'] = ""
                 gps['rcv_time'] = mDict['UTC_DATE_TIME']
-                gps['Forwared-By'] = "MtoW.py"
                 # Call-A-Robot prefers -1 for no GPS
                 if gps['latitude'] == "" or gps['longitude'] == "":
                     gps['latitude'] = "-1"
@@ -124,7 +123,6 @@ class MQTTforwarder:
                 bat['_id'] = mDict['CLIENT_ID']
                 bat['method'] = "battery"
                 bat['user'] = "ESP32_CAR_USER_Andy"
-                bat['Forwared-By'] = "MtoW.py"
                 self.WSend(json.dumps(bat))
         
         # Garbage may appear within MQTT message (like byte coded 
