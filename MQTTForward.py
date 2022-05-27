@@ -92,7 +92,7 @@ class MQTTforwarder:
             #print("Received", mDict, topic)
 
             # The extra field isn't recognised by WS server
-            if tStr == "trolley/method" or tStr == "trolley/registration":
+            if tStr == "trolley/method" or tStr == "trolley/register":
                 self.WSend(json.dumps(mDict))
             
             # reformat message (MQTT has a lot more info in and WS server only
@@ -105,11 +105,6 @@ class MQTTforwarder:
 
                 # NOTE not sure about _id
                 gps['_id'] = mDict['CLIENT_ID']
-
-                # TODO This field needs changing with the device itself
-                # it will be STD-v2-*UNIQUE MAC* (Smart Trolley Device Version 2)
-                gps['user'] = "ESP32_CAR_USER_Andy"
-
                 gps['accuracy'] = mDict['PDOP']
 
                 # NOTE The row isn't sent by STDv2 - it also won't be known by the device?
@@ -132,7 +127,6 @@ class MQTTforwarder:
                 bat['information'] = states
                 bat['_id'] = mDict['CLIENT_ID']
                 bat['method'] = "battery"
-                bat['user'] = "ESP32_CAR_USER_Andy"
                 self.WSend(json.dumps(bat))
         
         # Garbage may appear within MQTT message (like byte coded 
