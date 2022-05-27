@@ -17,3 +17,10 @@ Both run as daemons
 
 ## Future
 1. Which messages have been forwarded will be stored and saved to a locked file so multiple daemons can be run concurrently without resending a message twice
+
+## Libraries / Package requirements
+- import websocket
+- import rel
+- import paho.mqtt.client as mqtt
+- from websocket import create_connection
+- import json

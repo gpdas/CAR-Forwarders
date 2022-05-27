@@ -9,7 +9,6 @@
 #####################################################################
 
 # Standard imports
-from time import sleep
 
 # My imports
 from WSForward import WSforwarder
