@@ -24,3 +24,16 @@ Both run as daemons
 - import paho.mqtt.client as mqtt
 - from websocket import create_connection
 - import json
+
+## Config.py
+Not saved within repo as it has password
+
+MQTT_USER = '*****'
+MQTT_PASSWORD = '**********'
+MQTT_HOST = 'MQTT server host'
+MQTT_PORT = 8097
+
+# Topics as a list
+MQTT_TOPICS = ['trolley/gps', 'trolley/battery', 'trolley/method', 'trolley/registration', 'trolley/status']
+
+WS_HOST = 'wss://host name'
