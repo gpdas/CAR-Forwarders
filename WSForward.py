@@ -12,8 +12,6 @@
 import websocket
 import rel
 
-
-
 # My imports
 from Config import *
 
