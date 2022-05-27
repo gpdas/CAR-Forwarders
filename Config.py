@@ -9,7 +9,7 @@
 #####################################################################
 
 MQTT_USER = 'andy'
-MQTT_PASSWORD = '!qswd3288!S'
+MQTT_PASSWORD = '********'
 MQTT_HOST = 'mqtt.lar.lincoln.ac.uk'
 MQTT_PORT = 8097
 
