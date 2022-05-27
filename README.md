@@ -33,7 +33,7 @@ MQTT_PASSWORD = '**********'
 MQTT_HOST = 'MQTT server host'
 MQTT_PORT = 8097
 
-# Topics as a list
+**Topics as a list**
 MQTT_TOPICS = ['trolley/gps', 'trolley/battery', 'trolley/method', 'trolley/registration', 'trolley/status']
 
 WS_HOST = 'wss://host name'
