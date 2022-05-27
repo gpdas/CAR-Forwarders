@@ -17,25 +17,48 @@ import rel
 # My imports
 from Config import *
 
+###############
+# WSforwarded #
+###############
 class WSforwarder:
 
+    ############
+    # __init__ #
+    ############
     def __init__(self, host=WS_HOST):
         self.host = host
     
+    #################
+    # on_ws_message #
+    #################
     def on_ws_message(self, ws, message):
         print("message")
         print(message)
 
+    ###############
+    # on_ws_error #
+    ###############
     def on_ws_error(self, ws, error):
         print("### error ###", error)
 
+    ###############
+    # on_ws_close #
+    ###############
     def on_ws_close(self, ws, close_status_code, close_msg):
         print("### closed ###")
 
-
+    ##############
+    # on_ws_open #
+    ##############
     def on_ws_open(self, ws):
         print("Opened connection")
 
+    ###############
+    # run_forever #
+    ###############
+    # NOTE these defaults and ping_interval / timeout solved
+    # an exception issue whereby the connection simply
+    # broke
     def run_forever(self, sockopt=None, sslopt=None,
                     ping_interval=0, ping_timeout=None,
                     http_proxy_host=None, http_proxy_port=None,
@@ -46,6 +69,9 @@ class WSforwarder:
         rel.signal(2, rel.abort)  # Keyboard Interrupt
         rel.dispatch()
 
+    #######
+    # run #
+    #######
     def run(self):
 
         websocket.enableTrace(True)
