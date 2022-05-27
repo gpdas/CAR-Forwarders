@@ -8,6 +8,8 @@
 # Module:       Config.py                                           #
 #####################################################################
 
+# This file is not uploaded to protect password
+
 MQTT_USER = 'andy'
 MQTT_PASSWORD = '********'
 MQTT_HOST = 'mqtt.lar.lincoln.ac.uk'
