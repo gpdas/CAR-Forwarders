@@ -1,4 +1,4 @@
-#####################################################################
+######################################################################
 # Author:       Andy Perrett (18684092@students.lincoln.ac.uk)      #
 # Version:      1                                                   #
 # Date:         19/05/2022                                          #
@@ -15,6 +15,8 @@
 import paho.mqtt.client as mqtt
 from websocket import create_connection
 import json
+from calendar import timegm
+import time
 
 # My Imports
 from Config import *
@@ -32,6 +34,7 @@ class MQTTforwarder:
         self.password = password
         self.topicList = topicList
         self.wsHost = wsHost
+        self.ws = create_connection(self.wsHost)
  
     ###################
     # on_mqtt_connect #
@@ -49,6 +52,9 @@ class MQTTforwarder:
     def on_mqtt_message(self, client, userdata, msg):  
         #t1 = Process(target=self.send, args=(msg.payload, msg.topic))
         #t1.start()
+        file = open ("mqtt.txt", "a")
+        file.write(str(msg.topic) +","+str(msg.payload) + "\n")
+        file.close()
         self.send(msg.payload, msg.topic)  
 
     #######
@@ -57,27 +63,29 @@ class MQTTforwarder:
     def run(self):
 
         # Create instance
-        self.MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator") 
+        self.MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator", clean_session=False) 
         self.MQTTclient.username_pw_set(self.user, self.password)
 
         # Set callbacks 
         self.MQTTclient.on_connect = self.on_mqtt_connect  
         self.MQTTclient.on_message = self.on_mqtt_message  
-        
+        self.MQTTclient.on_disconnect = self.on_disconnect
         # See config for connection details
         self.MQTTclient.connect(self.host, self.port)
         
         # Daemon
         self.MQTTclient.loop_forever()
 
+    def on_disconnect(self, client, userdata, rc):
+        self.run()
+
     #########
     # WSend #
     #########
     def WSend(self, msg):
-        ws = create_connection(self.wsHost)
-        ws.send(msg)
+        self.ws.send(msg)
         print("Sending...", msg)
-        ws.close()
+
 
     ########
     # send #
@@ -92,31 +100,44 @@ class MQTTforwarder:
 
             # The extra field isn't recognised by WS server
             if tStr == "trolley/method" or tStr == "trolley/register":
-                mDict['Forwared-By'] = "MtoW.py"
+                mDict['Forward-By'] = "MtoW.py"
                 self.WSend(json.dumps(mDict))
             
             # reformat message (MQTT has a lot more info in and WS server only
             # wants some of it)    
             elif tStr == "trolley/gps":
                 gps = {}
-                gps['latitude'] = mDict['LATITUDE']
+                try:
+                    gps['latitude'] = float(mDict['LATITUDE'])
+                    gps['longitude'] = float(mDict['LONGITUDE'])
+                except:
+                    gps['latitude'] = ""
+                    gps['longitude'] = ""    
                 gps['method'] = "location_update"
-                gps['longitude'] = mDict['LONGITUDE']
+                
 
                 # NOTE not sure about _id
-                gps['_id'] = mDict['CLIENT_ID']
-                gps['accuracy'] = mDict['PDOP']
+                gps['user'] = "STD_v2_"+ mDict['CLIENT_ID']
 
-                # NOTE The row isn't sent by STDv2 - it also won't be known by the device?
+                # Accuracy is a float 
+                try:
+                    gps['accuracy'] = float(mDict['PDOP'])
+                except:
+                    gps['accuracy'] = -1
+
                 gps['row'] = ""
-                gps['rcv_time'] = mDict['UTC_DATE_TIME']
+                # NOTE The row isn't sent by STDv2 - it also won't be known by the device?
+                utc_time = time.strptime(mDict['UTC_DATE_TIME'], "%Y%m%d%H%M%S.%f")
+                gps['rcv_time'] = timegm(utc_time)
+
 
                 # Call-A-Robot prefers -1 for no GPS
                 # NOTE will be set within STD in near future
-                if gps['latitude'] == "" or gps['longitude'] == "":
-                    gps['latitude'] = "-1"
-                    gps['longitude'] = "-1"
-                gps['Forwared-By'] = "MtoW.py"
+                if gps['latitude'] == "" and gps['longitude'] == "":
+                    gps['latitude'] = -1
+                    gps['longitude'] = -1
+
+                gps['Forward-By'] = "MtoW.py"
                 self.WSend(json.dumps(gps))
             
             # Battery info - WS ignores this at present
@@ -128,15 +149,13 @@ class MQTTforwarder:
                 bat['information'] = states
                 bat['_id'] = mDict['CLIENT_ID']
                 bat['method'] = "battery"
-                bat['Forwared-By'] = "MtoW.py"
+                bat['Forward-By'] = "MtoW.py"
                 self.WSend(json.dumps(bat))
         
         # Garbage may appear within MQTT message (like byte coded 
         # message that can't be converted to UTF-8)
         except Exception as e:
             print("Exception:", e)
-
-
 
 
         
