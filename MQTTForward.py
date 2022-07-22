@@ -17,6 +17,7 @@ from websocket import create_connection
 import json
 from calendar import timegm
 import time
+from pprint import pformat
 
 # My Imports
 from Config import *
@@ -44,6 +45,7 @@ class MQTTforwarder:
 
         # Multiple topics
         for p in self.topicList:
+            print('subscribing to %s' % p)
             client.subscribe(p)  
 
     ###################
@@ -52,9 +54,9 @@ class MQTTforwarder:
     def on_mqtt_message(self, client, userdata, msg):  
         #t1 = Process(target=self.send, args=(msg.payload, msg.topic))
         #t1.start()
-        file = open ("mqtt.txt", "a")
-        file.write(str(msg.topic) +","+str(msg.payload) + "\n")
-        file.close()
+        #file = open ("mqtt.txt", "a")
+        #file.write(str(msg.topic) +","+str(msg.payload) + "\n")
+        #file.close()
         self.send(msg.payload, msg.topic)  
 
     #######
@@ -63,28 +65,29 @@ class MQTTforwarder:
     def run(self):
 
         # Create instance
-        self.MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator", clean_session=False) 
+        self.MQTTclient = mqtt.Client(clean_session=True) 
         self.MQTTclient.username_pw_set(self.user, self.password)
 
         # Set callbacks 
         self.MQTTclient.on_connect = self.on_mqtt_connect  
         self.MQTTclient.on_message = self.on_mqtt_message  
-        self.MQTTclient.on_disconnect = self.on_disconnect
+        self.MQTTclient.on_disconnect = self.on_mqtt_disconnect
         # See config for connection details
         self.MQTTclient.connect(self.host, self.port)
         
         # Daemon
         self.MQTTclient.loop_forever()
 
-    def on_disconnect(self, client, userdata, rc):
+    def on_mqtt_disconnect(self, client, userdata, rc):
+        print('mqtt disconnected %s' % userdata)
         self.run()
 
     #########
     # WSend #
     #########
     def WSend(self, msg):
+        print("Sending to websocket...", msg)
         self.ws.send(msg)
-        print("Sending...", msg)
 
 
     ########
@@ -101,6 +104,12 @@ class MQTTforwarder:
             # The extra field isn't recognised by WS server
             if tStr == "trolley/method" or tStr == "trolley/register":
                 mDict['Forward-By'] = "MtoW.py"
+                if 'method' in mDict:
+                    if mDict['method'] == 'call':
+                        mDict['method'] = 'car_call'
+                    elif mDict['method'] == 'cancel':
+                        mDict['method'] = 'car_cancel_task'
+                print('message: %s' % pformat(mDict))
                 self.WSend(json.dumps(mDict))
             
             # reformat message (MQTT has a lot more info in and WS server only
