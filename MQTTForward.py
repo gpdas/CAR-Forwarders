@@ -86,8 +86,15 @@ class MQTTforwarder:
     # WSend #
     #########
     def WSend(self, msg):
-        print("Sending to websocket...", msg)
-        self.ws.send(msg)
+        try: 
+            print("Sending to websocket...", msg)
+            self.ws.send(msg)
+        except Exception as e:
+            print("couldn't send, trying to reconnect: %s" % e)
+            self.ws = create_connection(self.wsHost)
+            if self.ws:
+                self.ws.send(msg)
+
 
 
     ########
