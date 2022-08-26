@@ -11,6 +11,9 @@
 # Standard imports
 import websocket
 import rel
+import paho.mqtt.client as mqtt
+import json
+import time
 
 # My imports
 from Config import *
@@ -30,8 +33,17 @@ class WSforwarder:
     # on_ws_message #
     #################
     def on_ws_message(self, ws, message):
-        print("message")
+        message = json.loads(message)
+        MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator") 
+        MQTTclient.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+        MQTTclient.connect(MQTT_HOST, MQTT_PORT)
+        message['epoch'] = int(time.time())
+        message['Forward-By'] = "WtoM.py"
+        message = json.dumps(message)
+        ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0) 
         print(message)
+        MQTTclient.disconnect()
+
 
     ###############
     # on_ws_error #

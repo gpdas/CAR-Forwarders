@@ -142,19 +142,11 @@ class MQTTforwarder:
 
                 # Call-A-Robot prefers -1 for no GPS
                 # NOTE will be set within STD in near future
-<<<<<<< HEAD
                 if gps['latitude'] == "" and gps['longitude'] == "":
                     gps['latitude'] = -1
                     gps['longitude'] = -1
 
                 gps['Forward-By'] = "MtoW.py"
-=======
-                if gps['latitude'] == "" or gps['longitude'] == "":
-                    gps['latitude'] = "-1"
-                    gps['longitude'] = "-1"
-                gps['Forwared-By'] = "MtoW.py"
-                gps['user'] = mDict['user']
->>>>>>> 18cfa05 (MQTTFordward)
                 self.WSend(json.dumps(gps))
             
             # Battery info - WS ignores this at present
@@ -173,6 +165,3 @@ class MQTTforwarder:
         # message that can't be converted to UTF-8)
         except Exception as e:
             print("Exception:", e)
-
-
-        
