@@ -41,4 +41,5 @@ MQTT_PORT = 8097
 MQTT_TOPICS = ['trolley/gps', 'trolley/battery', 'trolley/method', 'trolley/registration', 'trolley/status']
 
 WS_HOST = 'wss://host name'
+
 MQTT_LISTEN_TOPIC = 'trolley/status'
