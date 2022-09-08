@@ -109,6 +109,8 @@ class MQTTforwarder:
                         mDict['method'] = 'car_call'
                     elif mDict['method'] == 'cancel':
                         mDict['method'] = 'car_cancel_task'
+                    elif (mDict['method'] == 'set_state') and (mDict['state'] == 'LOADED'):
+                        mDict['method'] = 'car_load'
                 print('message: %s' % pformat(mDict))
                 self.WSend(json.dumps(mDict))
             
