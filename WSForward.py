@@ -21,6 +21,9 @@ from Config import *
 ###############
 # WSforwarded #
 ###############
+
+
+
 class WSforwarder:
 
     ############
@@ -100,7 +103,7 @@ class WSforwarder:
     #######
     def run(self):
 
-        websocket.enableTrace(True)
+        websocket.enableTrace(False)
         self.ws = websocket.WebSocketApp(self.host,
                                 on_open=self.on_ws_open,
                                 on_message=self.on_ws_message,
