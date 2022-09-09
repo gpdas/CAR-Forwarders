@@ -21,6 +21,9 @@ from Config import *
 ###############
 # WSforwarded #
 ###############
+
+
+
 class WSforwarder:
 
     ############
@@ -28,22 +31,39 @@ class WSforwarder:
     ############
     def __init__(self, host=WS_HOST):
         self.host = host
+        self.state_switch = {
+            'car_INIT': 'INIT',
+            'car_CALLED': 'CALLED',
+            'car_ACCEPT': 'ACCEPT',
+            'car_ARRIVED': 'ARRIVED',
+            'car_LOADED': 'LOADED',
+            'car_CANCEL': 'INIT'
+        }
     
     #################
     # on_ws_message #
     #################
     def on_ws_message(self, ws, message):
+        #print (message)
         message = json.loads(message)
-        MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator") 
-        MQTTclient.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-        MQTTclient.connect(MQTT_HOST, MQTT_PORT)
-        message['epoch'] = int(time.time())
-        message['Forward-By'] = "WtoM.py"
-        message = json.dumps(message)
-        ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0) 
-        print(message)
-        MQTTclient.disconnect()
-
+        #message = json.dumps(message)
+        
+        #_msg = {}#json.dumps(message)
+        if 'method' in message.keys() and message['method'] == 'update_orders':
+            MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator") 
+            MQTTclient.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+            MQTTclient.connect(MQTT_HOST, MQTT_PORT)
+            
+            for item in message['states']:
+                message['states'][item] = self.state_switch.get(message['states'][item], message['states'][item])
+            
+            message['epoch'] = int(time.time())
+            message['Forward-By'] = "WtoM.py"
+        
+            message = json.dumps(message)
+            ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0) 
+            print(message)
+            MQTTclient.disconnect()
 
     ###############
     # on_ws_error #
@@ -84,7 +104,7 @@ class WSforwarder:
     #######
     def run(self):
 
-        websocket.enableTrace(True)
+        websocket.enableTrace(False)
         self.ws = websocket.WebSocketApp(self.host,
                                 on_open=self.on_ws_open,
                                 on_message=self.on_ws_message,
