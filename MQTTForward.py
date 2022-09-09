@@ -131,8 +131,10 @@ class MQTTforwarder:
                 # Accuracy is a float 
                 try:
                     gps['accuracy'] = float(mDict['PDOP'])
+                    gps['HDOP'] = float(mDict['HDOP'])
                 except:
                     gps['accuracy'] = -1
+                    gps['HDOP'] = -1
 
                 gps['row'] = ""
                 # NOTE The row isn't sent by STDv2 - it also won't be known by the device?
