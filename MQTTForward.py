@@ -86,8 +86,15 @@ class MQTTforwarder:
     # WSend #
     #########
     def WSend(self, msg):
-        print("Sending to websocket...", msg)
-        self.ws.send(msg)
+        try: 
+            print("Sending to websocket...", msg)
+            self.ws.send(msg)
+        except Exception as e:
+            print("couldn't send, trying to reconnect: %s" % e)
+            self.ws = create_connection(self.wsHost)
+            if self.ws:
+                self.ws.send(msg)
+
 
 
     ########
@@ -109,6 +116,8 @@ class MQTTforwarder:
                         mDict['method'] = 'car_call'
                     elif mDict['method'] == 'cancel':
                         mDict['method'] = 'car_cancel_task'
+                    elif (mDict['method'] == 'set_state') and (mDict['state'] == 'LOADED'):
+                        mDict['method'] = 'car_load'
                 print('message: %s' % pformat(mDict))
                 self.WSend(json.dumps(mDict))
             

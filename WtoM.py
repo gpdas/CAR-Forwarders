@@ -13,6 +13,7 @@
 # My imports
 from WSForward import WSforwarder
 from Config import *
+import time
 
 ########
 # main #
@@ -21,13 +22,9 @@ def main():
 
     # Setup Daemon
     
-    while True:
-        try:
-            w = WSforwarder(WS_HOST)
-            w.run()
-        except Exception as e:
-            print(e)
-
+    w = WSforwarder(WS_HOST)
+    w.run()
+    
 # Call main properly
 if __name__ == "__main__":
     main()
