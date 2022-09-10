@@ -9,6 +9,7 @@
 #####################################################################
 
 # Standard imports
+from socket import socket
 import websocket
 import rel
 import paho.mqtt.client as mqtt
@@ -30,6 +31,7 @@ class WSforwarder:
     # __init__ #
     ############
     def __init__(self, host=WS_HOST):
+        self.ws = None
         self.host = host
         self.state_switch = {
             'car_INIT': 'INIT',
@@ -39,6 +41,8 @@ class WSforwarder:
             'car_LOADED': 'LOADED',
             'car_CANCEL': 'INIT'
         }
+
+        websocket.enableTrace(False)
     
     #################
     # on_ws_message #
@@ -59,7 +63,7 @@ class WSforwarder:
             message['Forward-By'] = "WtoM.py"
         
             message = json.dumps(message)
-            ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
+            #ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
             print(message)
             MQTTclient.disconnect()
 
@@ -69,12 +73,14 @@ class WSforwarder:
     ###############
     def on_ws_error(self, ws, error):
         print("### error ###", error)
+        if isinstance(error, KeyboardInterrupt) or isinstance(error, SystemExit):
+            self.ws.close()
 
     ###############
     # on_ws_close #
     ###############
     def on_ws_close(self, ws, close_status_code, close_msg):
-        print("### closed ###")
+        print("### closed ###", close_status_code, close_msg)
 
     ##############
     # on_ws_open #
@@ -94,23 +100,37 @@ class WSforwarder:
                     http_no_proxy=None, http_proxy_auth=None,
                     skip_utf8_validation=False,
                     host=None, origin=None):
-        self.ws.run_forever(dispatcher=rel, ping_interval=70, ping_timeout=10)
-        rel.signal(2, rel.abort)  # Keyboard Interrupt
-        rel.dispatch()
+        self.ws.run_forever(ping_interval=70, ping_timeout=10)
+        #self.ws.run_forever(dispatcher=rel, ping_interval=70, ping_timeout=10)
+        #rel.signal(2, rel.abort)  # Keyboard Interrupt
+        #rel.dispatch()
 
     #######
     # run #
     #######
     def run(self):
-
-        websocket.enableTrace(False)
+        print("attempt connection to %s" % self.host)
         self.ws = websocket.WebSocketApp(self.host,
                                 on_open=self.on_ws_open,
                                 on_message=self.on_ws_message,
                                 on_error=self.on_ws_error,
                                 on_close=self.on_ws_close)
-        self.run_forever()
-
-
-
-        
+        while True:
+            try:
+                time.sleep(0.1)
+                teardown = self.run_forever()
+            
+            except KeyboardInterrupt:
+                print ('KeyboardInterrupt')
+                self.ws.close()
+                break
+            
+            except websocket._exceptions.WebSocketException as e:
+                self.ws.sock = None
+                pass
+            
+            finally:
+                if teardown and not teardown:
+                    print (teardown, 'KeyboardInterrupt')
+                    self.ws.close()
+                    break
