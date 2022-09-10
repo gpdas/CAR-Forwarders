@@ -63,7 +63,7 @@ class WSforwarder:
             message['Forward-By'] = "WtoM.py"
         
             message = json.dumps(message)
-            #ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
+            ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
             print(message)
             MQTTclient.disconnect()
 
