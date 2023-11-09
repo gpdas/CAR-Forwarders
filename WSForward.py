@@ -52,6 +52,7 @@ class WSforwarder:
         message = json.loads(message)
 
         if 'method' in message.keys() and message['method'] == 'update_orders':
+            print('=> processing WS message : %s' % message)
             MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator")
             MQTTclient.username_pw_set(MQTT_USER, MQTT_PASSWORD)
             MQTTclient.connect(MQTT_HOST, MQTT_PORT)
@@ -64,7 +65,7 @@ class WSforwarder:
         
             message = json.dumps(message)
             ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
-            print(message)
+            print('<= published on MQTT topic "%s": %s' % (MQTT_LISTEN_TOPIC, message))
             MQTTclient.disconnect()
 
 
