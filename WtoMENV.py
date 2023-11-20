@@ -35,7 +35,7 @@ def main():
     # Setup Daemon
     while True:
         try:
-            w = WSforwarder(WS_HOST)
+            w = WSforwarder(WS_HOST, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_TOPICS)
             w.run()
         except Exception as e:
             print(e)

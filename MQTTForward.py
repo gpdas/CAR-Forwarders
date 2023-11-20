@@ -19,8 +19,6 @@ from calendar import timegm
 import time
 from pprint import pformat
 
-# My Imports
-from Config import *
 
 #################
 # MQTTforwarder #
@@ -28,7 +26,7 @@ from Config import *
 class MQTTforwarder:
 
     # Defaults within Config.py
-    def __init__(self, host = MQTT_HOST, port = MQTT_PORT, user = MQTT_USER, password = MQTT_PASSWORD, topicList = MQTT_TOPICS, wsHost = WS_HOST):
+    def __init__(self, host, port, user, password, topicList, wsHost):
         self.host = host
         self.port = port
         self.user = user
@@ -36,28 +34,28 @@ class MQTTforwarder:
         self.topicList = topicList
         self.wsHost = wsHost
         self.ws = create_connection(self.wsHost)
- 
+
     ###################
     # on_mqtt_connect #
     ###################
-    def on_mqtt_connect(self, client, userdata, flags, rc): 
-        print("MQTT connected with result code {0}".format(str(rc)))  
+    def on_mqtt_connect(self, client, userdata, flags, rc):
+        print("MQTT connected with result code {0}".format(str(rc)))
 
         # Multiple topics
         for p in self.topicList:
             print('subscribing to %s' % p)
-            client.subscribe(p)  
+            client.subscribe(p)
 
     ###################
     # on_mqtt_message #
     ###################
-    def on_mqtt_message(self, client, userdata, msg):  
+    def on_mqtt_message(self, client, userdata, msg):
         #t1 = Process(target=self.send, args=(msg.payload, msg.topic))
         #t1.start()
         #file = open ("mqtt.txt", "a")
         #file.write(str(msg.topic) +","+str(msg.payload) + "\n")
         #file.close()
-        self.send(msg.payload, msg.topic)  
+        self.send(msg.payload, msg.topic)
 
     #######
     # run #
@@ -65,16 +63,17 @@ class MQTTforwarder:
     def run(self):
 
         # Create instance
-        self.MQTTclient = mqtt.Client(clean_session=True) 
+        self.MQTTclient = mqtt.Client(clean_session=True)
         self.MQTTclient.username_pw_set(self.user, self.password)
 
-        # Set callbacks 
-        self.MQTTclient.on_connect = self.on_mqtt_connect  
-        self.MQTTclient.on_message = self.on_mqtt_message  
+        # Set callbacks
+        self.MQTTclient.on_connect = self.on_mqtt_connect
+        self.MQTTclient.on_message = self.on_mqtt_message
         self.MQTTclient.on_disconnect = self.on_mqtt_disconnect
+
         # See config for connection details
         self.MQTTclient.connect(self.host, self.port)
-        
+
         # Daemon
         self.MQTTclient.loop_forever()
 
@@ -86,7 +85,7 @@ class MQTTforwarder:
     # WSend #
     #########
     def WSend(self, msg):
-        try: 
+        try:
             print("Sending to websocket...", msg)
             self.ws.send(msg)
         except Exception as e:
@@ -120,9 +119,9 @@ class MQTTforwarder:
                         mDict['method'] = 'car_load'
                 print('message: %s' % pformat(mDict))
                 self.WSend(json.dumps(mDict))
-            
+
             # reformat message (MQTT has a lot more info in and WS server only
-            # wants some of it)    
+            # wants some of it)
             elif tStr == "trolley/gps":
                 gps = {}
                 try:
@@ -130,14 +129,13 @@ class MQTTforwarder:
                     gps['longitude'] = float(mDict['LONGITUDE'])
                 except:
                     gps['latitude'] = ""
-                    gps['longitude'] = ""    
+                    gps['longitude'] = ""
                 gps['method'] = "location_update"
-                
 
                 # NOTE not sure about _id
                 gps['user'] = "STD_v2_"+ mDict['CLIENT_ID']
 
-                # Accuracy is a float 
+                # Accuracy is a float
                 try:
                     gps['accuracy'] = float(mDict['PDOP'])
                     gps['HDOP'] = float(mDict['HDOP'])
@@ -163,7 +161,7 @@ class MQTTforwarder:
 
                 gps['Forward-By'] = "MtoW.py"
                 self.WSend(json.dumps(gps))
-            
+
             # Battery info - WS ignores this at present
             elif tStr == "trolley/battery":
                 bat = {}
@@ -175,8 +173,8 @@ class MQTTforwarder:
                 bat['method'] = "battery"
                 bat['Forward-By'] = "MtoW.py"
                 self.WSend(json.dumps(bat))
-        
-        # Garbage may appear within MQTT message (like byte coded 
+
+        # Garbage may appear within MQTT message (like byte coded
         # message that can't be converted to UTF-8)
         except Exception as e:
             print("Exception:", e)
