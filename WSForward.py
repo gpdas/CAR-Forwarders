@@ -26,18 +26,27 @@ except Exception as e:
 # WSforwarded #
 ###############
 
+MQTT_LISTEN_TOPIC = 'trolley/status'
+
 class WSforwarder:
 
     ############
     # __init__ #
     ############
-    def __init__(self, host, port, user, password, topics):
+    def __init__(self, ws_host, mqtt_host, mqtt_port, user, password, topics):
         self.ws = None
-        self.host = host
-        self.port = port
+        self.host = ws_host
+        self.mqtt_host = mqtt_host
+        self.mqtt_port = mqtt_port
         self.user = user
         self.password = password
         self.topics = topics
+
+        self.mqtt_available = False
+        self.MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator")
+        #self.MQTTclient.username_pw_set(self.user, self.password)
+        self.MQTTclient.on_connect = self.on_mqtt_connect
+        #self.MQTTclient.connect(self.mqtt_host, self.mqtt_port)
 
         self.state_switch = {
             'car_INIT': 'INIT',
@@ -53,15 +62,25 @@ class WSforwarder:
     #################
     # on_ws_message #
     #################
+    def on_mqtt_connect(self):
+        print('\n\n')
+        print('mqtt connection established')
+        print('\n\n')
+        self.mqtt_available = True
+
     def on_ws_message(self, ws, message):
+        #print('\n')
         #print (message)
         message = json.loads(message)
 
         if 'method' in message.keys() and message['method'] == 'update_orders':
+
+            #if self.mqtt_available == False:
+            #    print('=> mqtt client not available, exiting callback')
+            #    return
+
+            self.MQTTclient.connect(self.mqtt_host, self.mqtt_port)
             print('=> processing WS message : %s' % message)
-            MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator")
-            MQTTclient.username_pw_set(self.user, self.password)
-            MQTTclient.connect(self.host, self.port)
 
             for item in message['states']:
                 message['states'][item] = self.state_switch.get(message['states'][item], message['states'][item])
@@ -70,9 +89,9 @@ class WSforwarder:
             message['Forward-By'] = "WtoM.py"
 
             message = json.dumps(message)
-            ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
+            ret = self.MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
             print('<= published on MQTT topic "%s": %s' % (MQTT_LISTEN_TOPIC, message))
-            MQTTclient.disconnect()
+            self.MQTTclient.disconnect()
 
 
     ###############
@@ -135,6 +154,9 @@ class WSforwarder:
             except websocket._exceptions.WebSocketException as e:
                 self.ws.sock = None
                 pass
+
+            except Exception as e:
+                print(e)
 
             finally:
                 if teardown and not teardown:

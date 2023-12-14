@@ -9,7 +9,7 @@
 #####################################################################
 
 # Standard imports
-import os
+import os, time
 
 # My imports
 from WSForward import WSforwarder
@@ -35,10 +35,12 @@ def main():
     # Setup Daemon
     while True:
         try:
-            w = WSforwarder(WS_HOST, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_TOPICS)
+            print('trying to connect from '+WS_HOST+' to '+MQTT_HOST+':'+MQTT_PORT)
+            w = WSforwarder(WS_HOST, MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASSWORD, MQTT_TOPICS)
             w.run()
         except Exception as e:
             print(e)
+            time.sleep(1)
 
 # Call main properly
 if __name__ == "__main__":
