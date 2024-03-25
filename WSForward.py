@@ -11,28 +11,43 @@
 # Standard imports
 from socket import socket
 import websocket
-import rel
 import paho.mqtt.client as mqtt
 import json
 import time
 
-# My imports
-from Config import *
+try:
+    import rel
+except Exception as e:
+    print(e)
+    print('pip install rel')
+    exit()
 
 ###############
 # WSforwarded #
 ###############
 
-
+MQTT_LISTEN_TOPIC = 'trolley/status'
 
 class WSforwarder:
 
     ############
     # __init__ #
     ############
-    def __init__(self, host=WS_HOST):
+    def __init__(self, ws_host, mqtt_host, mqtt_port, user, password, topics):
         self.ws = None
-        self.host = host
+        self.host = ws_host
+        self.mqtt_host = mqtt_host
+        self.mqtt_port = mqtt_port
+        self.user = user
+        self.password = password
+        self.topics = topics
+
+        self.mqtt_available = False
+        self.MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator")
+        #self.MQTTclient.username_pw_set(self.user, self.password)
+        self.MQTTclient.on_connect = self.on_mqtt_connect
+        #self.MQTTclient.connect(self.mqtt_host, self.mqtt_port)
+
         self.state_switch = {
             'car_INIT': 'INIT',
             'car_CALLED': 'CALLED',
@@ -43,29 +58,40 @@ class WSforwarder:
         }
 
         websocket.enableTrace(False)
-    
+
     #################
     # on_ws_message #
     #################
+    def on_mqtt_connect(self):
+        print('\n\n')
+        print('mqtt connection established')
+        print('\n\n')
+        self.mqtt_available = True
+
     def on_ws_message(self, ws, message):
+        #print('\n')
         #print (message)
         message = json.loads(message)
 
         if 'method' in message.keys() and message['method'] == 'update_orders':
-            MQTTclient = mqtt.Client("MQTT_to_Websockets_Translator")
-            MQTTclient.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-            MQTTclient.connect(MQTT_HOST, MQTT_PORT)
-            
+
+            #if self.mqtt_available == False:
+            #    print('=> mqtt client not available, exiting callback')
+            #    return
+
+            self.MQTTclient.connect(self.mqtt_host, self.mqtt_port)
+            print('=> processing WS message : %s' % message)
+
             for item in message['states']:
                 message['states'][item] = self.state_switch.get(message['states'][item], message['states'][item])
-            
+
             message['epoch'] = int(time.time())
             message['Forward-By'] = "WtoM.py"
-        
+
             message = json.dumps(message)
-            ret= MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
-            print(message)
-            MQTTclient.disconnect()
+            ret = self.MQTTclient.publish(MQTT_LISTEN_TOPIC, message, retain=False, qos=0)
+            print('<= published on MQTT topic "%s": %s' % (MQTT_LISTEN_TOPIC, message))
+            self.MQTTclient.disconnect()
 
 
     ###############
@@ -119,16 +145,19 @@ class WSforwarder:
             try:
                 time.sleep(0.1)
                 teardown = self.run_forever()
-            
+
             except KeyboardInterrupt:
                 print ('KeyboardInterrupt')
                 self.ws.close()
                 break
-            
+
             except websocket._exceptions.WebSocketException as e:
                 self.ws.sock = None
                 pass
-            
+
+            except Exception as e:
+                print(e)
+
             finally:
                 if teardown and not teardown:
                     print (teardown, 'KeyboardInterrupt')
